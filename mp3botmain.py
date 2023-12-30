@@ -1,16 +1,28 @@
 from pytube import YouTube, Playlist
 import os
+def check_title(title):
+    index = title.find('\\')
+    index2 = title.find('/')
+    while index != -1 or index2 != -1:  
+        return False
+    return True
 
+def get_title():
+    title = str(input("Input the name for the mp3 file (Original video title will be used if given no input): "))
+    while check_title(title) is False:
+        title = input("Your file name can't contain '\' or '/' Please enter a new title: ")
+    return title
 
-def download_vid(yt,title='',option=2,original=False):
+def download_vid(yt,option=2, saveAddress='', original = 2):
     print(f"Video: {yt.title}")
-    if original:
-        title = yt.title
+
+    if original == 1:
+        title = check_title(yt.title)
     else:
-        title = str(input("Input the name for the mp3 file (Original video title will be used if given no input): "))
+        title = get_title()
         if (title == ""):
             title = yt.title
-        print("Options: ")
+        
     print("Loading video...")
     streamlist = yt.streams.filter(only_audio=True).order_by("abr")
     print("Video loaded!")
@@ -19,20 +31,28 @@ def download_vid(yt,title='',option=2,original=False):
 
     if option == 2:
         for stream in range(len(streamlist)):
+            print("Options: ")
             print(f"Option {stream+1} - Bitrate: {streamlist[stream].abr} File Size: {streamlist[stream].filesize_mb} mb")
         option = int(input("Enter the option number to download: "))
         mp3file = yt.streams.get_by_itag(streamlist[option-1].itag)
     else:
         mp3file = yt.streams.get_by_itag(streamlist[-1].itag)
-
-    if saveAddress == "":
+    
+    if saveAddress == '':
         saveAddress = input("Enter the filepath to save the file (Will be saved in same folder as code if given no input): ")
 
-    if saveAddress != "":
-        mp3file.download(filename = f"{title}.mp3", output_path = saveAddress)
-    else:
-        mp3file.download(filename = f"{title}.mp3")
-    print(f"Saved {title} to {saveAddress}!")
+    done = False
+    while done is False:
+        try:
+            if saveAddress != "":
+                mp3file.download(filename = f"{title}.mp3", output_path = saveAddress)
+                
+            else:
+                mp3file.download(filename = f"{title}.mp3")
+            done = True
+        except:
+            title = input("Your file name isn't valid! Please enter a new title that abides your os guidelines of file naming (Try removing special characters)")
+    print(f"Saved {title}!")
 
     return
 
@@ -72,18 +92,17 @@ def getlink_pl(correct = 0):
     return pl
 
 def download_pl(pl):
-
-    titleOption = input("Enter 1 to use the original video title for all videos in the playlist, and 2 if you want to set your own titles")
-    bitrateOption = input("Enter 1 to download using the highest audio quality for all videos in the playlist, and 2 if you want to make individual selections")
-    
+    original = input("Enter 1 to use the original video title for the file name for all videos, and 2 to use your own titles (You might have to use your own title for certain videos that have special characters suhc as front or backwards slashes): ")
+    bitrateOption = input("Enter 1 to download using the highest audio quality for all videos in the playlist, and 2 if you want to make individual selections: ")
+    saveAddress = input("Enter the filepath to save all files (Give no input if you would like to choose separately for individual videos): ")
     for vid in pl.videos:
-        download_vid(vid, option = bitrateOption, original = titleOption)
+        download_vid(vid, bitrateOption, saveAddress, original = original)
     print(f"Downloading all videos from {pl.title} complete!")
 
 
 
 def vid_or_pl():
-    choice = int(input("Enter 1 to download 1 video, or 2 to download videos in a playlist"))
+    choice = int(input("Enter 1 to download 1 video, or 2 to download videos in a playlist: "))
     if choice == 1:
         yt = getlink_vid()
         download_vid(yt, option = 2)
